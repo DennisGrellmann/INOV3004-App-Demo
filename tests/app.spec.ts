@@ -26,8 +26,9 @@ async function mockGoogle(page: Page, options: { denyHeart?: boolean; expired?: 
 
 async function connect(page: Page) {
   await page.getByRole('button', { name: 'Connect Google Health', exact: true }).first().click();
+  await page.getByText('Connection settings', { exact: true }).click();
   await page.getByLabel('Google OAuth client ID').fill('123456-test.apps.googleusercontent.com');
-  await page.getByLabel('Resident display name').fill('Test Resident');
+  await page.getByLabel('Resident name').fill('Test Resident');
   await page.getByLabel('Room or wing').fill('Room 12 · Garden wing');
   await page.getByRole('button', { name: 'Continue with Google' }).click();
 }
@@ -46,12 +47,11 @@ for (const storedId of [null, previousClientId]) {
 test('unconnected dashboard contains no fabricated resident or readings', async ({ page }) => {
   await mockGoogle(page);
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Your resident, in focus' })).toBeVisible();
-  await expect(page.getByText('No sample records. Every reading comes from Google Health.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'No resident connected' })).toBeVisible();
   await expect(page.locator('.metric-number').first()).toContainText('—');
   await expect(page.locator('.metric-number').nth(1)).toContainText('—');
   await expect(page.locator('.metric-number').nth(2)).toContainText('—');
-  await expect(page.getByText('Check for tiredness, restlessness or irritability.')).toHaveCount(0);
+  await expect(page.locator('.care-notes')).toHaveCount(0);
   await page.screenshot({ path: '/workspace/scratch/careview-desktop.png', fullPage: true, animations: 'disabled' });
 });
 
@@ -62,22 +62,22 @@ test('Google-shaped API readings drive charts, comparisons and care prompts; dis
   await expect(page.getByRole('heading', { name: 'Test Resident' })).toBeVisible();
   await expect(page.locator('.metric-number').first()).toContainText('6.0');
   await expect(page.locator('.metric-number').nth(1)).toContainText('2,100');
-  await expect(page.getByText('Check for tiredness, restlessness or irritability.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Less sleep may affect daytime comfort' })).toBeVisible();
+  await expect(page.locator('.care-table')).toContainText('restlessness or irritability');
+  await expect(page.getByRole('heading', { name: 'Care considerations' })).toBeVisible();
   await page.getByRole('button', { name: '14 days', exact: true }).click();
   await expect(page.getByRole('img', { name: 'Nightly sleep over 14 days' })).toBeVisible();
   await page.getByText('View daily values', { exact: true }).click();
   await expect(page.locator('.daily-values tbody tr')).toHaveCount(14);
   await page.getByRole('button', { name: 'Activity', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Activity & movement' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Activity', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Overview', exact: true }).click();
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: '/workspace/scratch/careview-connected-test-fixtures.png', fullPage: true, animations: 'disabled' });
   await page.getByRole('button', { name: 'Google Health', exact: true }).click();
   await page.getByRole('button', { name: 'Disconnect account', exact: true }).click();
-  await expect(page.getByText('No account connected', { exact: false }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible();
   await page.getByRole('button', { name: 'Overview', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Your resident, in focus' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'No resident connected' })).toBeVisible();
   await expect(page.locator('.metric-number').first()).toContainText('—');
   const storage = await page.evaluate(() => JSON.stringify({ ...localStorage }));
   expect(storage).not.toContain('browser-test-token');
@@ -98,7 +98,7 @@ test('empty Google responses do not create zero readings or care alerts', async 
   await mockGoogle(page, { empty: true });
   await page.goto('/'); await connect(page);
   await expect(page.getByRole('heading', { name: 'No readings in this period' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'A little more data is needed' })).toBeVisible();
+  await expect(page.locator('.care-table')).toContainText('Insufficient data');
   await expect(page.getByText('0 of 7 days recorded')).toBeVisible();
 });
 
@@ -117,5 +117,5 @@ test('OAuth API failure leaves the dashboard unconnected with a useful error', a
   await mockGoogle(page, { expired: true });
   await page.goto('/'); await connect(page);
   await expect(page.getByRole('alert')).toContainText('expired');
-  await expect(page.getByText('No account connected')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Connect Google Health' })).toBeVisible();
 });

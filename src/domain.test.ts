@@ -14,7 +14,7 @@ describe('weekly comparisons', () => {
   it('detects falling sleep from measured weekly averages', () => {
     const trend = trendFor(week([...Array(7).fill(7.5), ...Array(7).fill(6)]), 'sleep');
     expect(trend).toMatchObject({ current: 6, previous: 7.5, delta: -1.5, coverage: 7, direction: 'down' });
-    expect(careInsight('sleep', trend).meaning).toContain('possible effects to check');
+    expect(careInsight('sleep', trend).meaning).toMatch(/possible effects to check/i);
     expect(careInsight('sleep', trend).attention).toBe(true);
   });
   it('does not infer a trend when either week has fewer than five measured days', () => {

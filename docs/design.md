@@ -36,3 +36,7 @@ Test window boundaries, missing data, trend calculation, session selection, dail
 - https://www.nhlbi.nih.gov/health/sleep-deprivation/health-effects
 
 Fetched 19 October 2026. The current setup documentation supports new-project setup; older search excerpts about onboarding restrictions are stale.
+
+## Minimal interface — 20 October 2026
+
+Keep navigation, the resident label, three weekly averages, the selected trend chart and one concise care-considerations table. Remove promotional text, repeated status labels, the separate insight panel, decorative account information and footer. Show care text only for changes that trigger a care prompt. Keep comparison definitions under About these readings, and place OAuth configuration and Google Cloud setup in collapsed details.

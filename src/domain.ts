@@ -56,40 +56,40 @@ export function formatValue(value: number | null, metric: MetricId): string {
 }
 
 export function changeText(trend: Trend, metric: MetricId): string {
-  if (trend.delta === null) return 'Not enough data to compare';
-  if (trend.direction === 'steady') return 'Similar to the previous week';
-  return `${formatValue(Math.abs(trend.delta), metric)} ${metrics[metric].unit} ${trend.delta < 0 ? 'less' : 'more'} than previous week`;
+  if (trend.delta === null) return 'Insufficient data';
+  if (trend.direction === 'steady') return 'Stable';
+  return `${trend.delta < 0 ? '−' : '+'}${formatValue(Math.abs(trend.delta), metric)} ${metrics[metric].unit}`;
 }
 
 export function careInsight(metric: MetricId, trend: Trend) {
   if (trend.direction === 'unknown') return {
     title: 'A little more data is needed',
-    meaning: 'There are not enough recorded days to describe a reliable weekly change.',
-    action: 'Check device wear and sync status. Keep recording observations as usual.',
+    meaning: 'Not enough data to compare.',
+    action: 'Check device wear and sync.',
     status: 'More data needed', attention: false,
   };
   if (metric === 'sleep' && trend.direction === 'down') return {
     title: 'Less sleep may affect daytime comfort',
-    meaning: 'Reduced sleep may be associated with restlessness, irritability, or tiredness. These are possible effects to check, not recorded behaviours.',
-    action: 'Ask how the resident is feeling, review overnight observations, and discuss a persistent change with the care team.',
+    meaning: 'Possible effects to check: tiredness, restlessness or irritability.',
+    action: 'Review overnight observations and check how the resident feels.',
     status: 'Worth a check-in', attention: true,
   };
   if (metric === 'steps' && trend.direction === 'down') return {
     title: 'Movement has reduced this week',
-    meaning: 'Lower recorded activity may reflect a change in routine, comfort, or device wear. Steps alone do not explain the cause.',
-    action: 'Check device wear and ask about comfort and participation before planning movement support.',
+    meaning: 'May reflect discomfort, routine changes or device wear.',
+    action: 'Check comfort, participation and device wear.',
     status: 'Worth a check-in', attention: true,
   };
   if (metric === 'heart' && trend.direction !== 'steady') return {
     title: 'Resting heart rate has changed',
-    meaning: 'A change in the weekly average can have several causes. A wearable reading alone cannot establish the reason.',
-    action: 'Check the reading and the resident’s usual baseline. Share a sustained change or accompanying symptoms with the care team.',
+    meaning: 'Compare with the resident’s usual baseline.',
+    action: 'Share persistent changes or symptoms with the care team.',
     status: 'Review the change', attention: true,
   };
   return {
     title: metric === 'sleep' ? 'Keep supporting a familiar sleep routine' : metric === 'steps' ? 'Continue the resident’s usual movement support' : 'Continue routine observations',
-    meaning: metric === 'sleep' && trend.direction === 'up' ? 'Recorded sleep has increased. Ask whether the resident feels more rested; more hours alone do not establish sleep quality.' : 'The recorded pattern does not trigger a change prompt in this demo. This does not establish that the resident is clinically well.',
-    action: 'Continue the individual care plan and note any changes the resident or care team observes.',
+    meaning: metric === 'sleep' && trend.direction === 'up' ? 'More hours do not establish sleep quality. Ask whether the resident feels rested.' : 'No change prompt. Continue routine observations.',
+    action: 'Follow the individual care plan.',
     status: trend.direction === 'up' && metric === 'sleep' ? 'More sleep recorded' : 'Usual pattern', attention: false,
   };
 }
