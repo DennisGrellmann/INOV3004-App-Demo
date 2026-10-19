@@ -18,7 +18,12 @@ const titles: Record<View, [string, string]> = {
 };
 
 function savedClientId() {
-  try { return localStorage.getItem('careview.googleClientId') || GOOGLE_CLIENT_ID; }
+  try {
+    const saved = localStorage.getItem('careview.googleClientId');
+    // Replace the retired project ID for browsers that used the previous release.
+    if (saved === '105537197664-pppve2aen17u6cl6hertj7urhmci625e.apps.googleusercontent.com') return GOOGLE_CLIENT_ID;
+    return saved || GOOGLE_CLIENT_ID;
+  }
   catch { return GOOGLE_CLIENT_ID; }
 }
 

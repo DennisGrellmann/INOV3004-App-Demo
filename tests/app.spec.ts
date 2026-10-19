@@ -1,6 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const permissions = ['sleep', 'activity_and_fitness', 'health_metrics_and_measurements'].map(name => `https://www.googleapis.com/auth/googlehealth.${name}.readonly`).join(' ');
+const currentClientId = '1043304648860-qpphse66j1j8pg8ke11c0cpa6oidqaq6.apps.googleusercontent.com';
+const previousClientId = '105537197664-pppve2aen17u6cl6hertj7urhmci625e.apps.googleusercontent.com';
 const now = new Date(2026, 9, 19, 12);
 const dates = Array.from({ length: 14 }, (_, i) => { const day = new Date(2026, 9, 5 + i); return { year: day.getFullYear(), month: day.getMonth() + 1, day: day.getDate() }; });
 
@@ -28,6 +30,17 @@ async function connect(page: Page) {
   await page.getByLabel('Resident display name').fill('Test Resident');
   await page.getByLabel('Room or wing').fill('Room 12 · Garden wing');
   await page.getByRole('button', { name: 'Continue with Google' }).click();
+}
+
+for (const storedId of [null, previousClientId]) {
+  test(`uses the replacement OAuth client for ${storedId ? 'returning' : 'new'} visitors`, async ({ page }) => {
+    await mockGoogle(page);
+    if (storedId) await page.addInitScript(value => localStorage.setItem('careview.googleClientId', value), storedId);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Connect Google Health', exact: true }).first().click();
+    await expect(page.getByLabel('Google OAuth client ID')).toHaveValue(currentClientId);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('careview.googleClientId'))).toBe(currentClientId);
+  });
 }
 
 test('unconnected dashboard contains no fabricated resident or readings', async ({ page }) => {
