@@ -119,3 +119,51 @@ test('OAuth API failure leaves the dashboard unconnected with a useful error', a
   await expect(page.getByRole('alert')).toContainText('expired');
   await expect(page.getByRole('heading', { name: 'Connect Google Health' })).toBeVisible();
 });
+
+test('family page summarises Google patterns and visit suggestions without raw metrics', async ({ page }) => {
+  await mockGoogle(page);
+  await page.goto('/');
+  await connect(page);
+  await page.getByRole('button', { name: 'Family', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Family', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'This week' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What it may mean' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'When you visit' })).toBeVisible();
+  await expect(page.locator('.family-view')).toContainText('Less sleep');
+  await expect(page.locator('.family-view')).toContainText('may feel');
+  await expect(page.locator('.family-visits li')).toHaveCount(3);
+  await expect(page.locator('.metric-grid')).toHaveCount(0);
+  await expect(page.getByRole('img', { name: /over 7 days/ })).toHaveCount(0);
+  await expect(page.getByRole('table')).toHaveCount(0);
+  await page.screenshot({ path: '/workspace/scratch/careview-family-desktop.png', fullPage: true, animations: 'disabled' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: '/workspace/scratch/careview-family-mobile.png', fullPage: true, animations: 'disabled' });
+});
+
+test('family page shows missing readings without inventing a feeling', async ({ page }) => {
+  await mockGoogle(page, { empty: true });
+  await page.goto('/'); await connect(page);
+  await page.getByRole('button', { name: 'Family', exact: true }).click();
+  await expect(page.locator('.family-view')).toContainText('Not enough readings');
+  await expect(page.locator('.family-view')).not.toContainText('may feel more tired');
+  await expect(page.locator('.family-visits li')).toHaveCount(3);
+});
+
+test('family connection returns to the summary and disconnect clears it', async ({ page }) => {
+  await mockGoogle(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Family', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'No resident connected' })).toBeVisible();
+  await expect(page.locator('.family-empty')).toBeVisible();
+  await expect(page.locator('.family-visits')).toHaveCount(0);
+  await connect(page);
+  await expect(page.getByRole('heading', { name: 'Family', exact: true })).toBeVisible();
+  await expect(page.locator('.family-view')).toContainText('Less sleep');
+  await page.getByRole('button', { name: 'Google Health', exact: true }).click();
+  await page.getByRole('button', { name: 'Disconnect account', exact: true }).click();
+  await page.getByRole('button', { name: 'Family', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'No resident connected' })).toBeVisible();
+  await expect(page.locator('.family-empty')).toBeVisible();
+  await expect(page.locator('.family-view')).toHaveCount(0);
+});

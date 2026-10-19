@@ -40,3 +40,11 @@ Fetched 19 October 2026. The current setup documentation supports new-project se
 ## Minimal interface — 20 October 2026
 
 Keep navigation, the resident label, three weekly averages, the selected trend chart and one concise care-considerations table. Remove promotional text, repeated status labels, the separate insight panel, decorative account information and footer. Show care text only for changes that trigger a care prompt. Keep comparison definitions under About these readings, and place OAuth configuration and Google Cloud setup in collapsed details.
+
+## Family page — 20 October 2026
+
+Approved in chat. Add a Family menu item for the connected resident, with three sections: This week, What it may mean, and When you visit. Use the existing Google data and weekly comparison thresholds. Omit numeric metrics and charts. Translate only sufficiently supported trends; label interpretations as possible effects rather than reported feelings. Explicitly indicate missing comparisons, and show an empty state before connection. Keep three practical visit suggestions and preserve prompts to ask the care team when resting heart rate changes. The page remains part of the existing private session, with no new roles or sharing system.
+
+Sleep context: https://www.nhlbi.nih.gov/health/sleep-deprivation/health-effects
+
+Communication context: https://www.nia.nih.gov/health/obtaining-older-patients-medical-history

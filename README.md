@@ -31,6 +31,18 @@ You can alternatively set `VITE_GOOGLE_CLIENT_ID` in a local `.env` file before 
 
 Google verifies the connected health account; it does not verify the resident name or room entered in Careview. This first version displays one account at a time. Disconnect before connecting another resident.
 
+## Family view
+
+Choose **Family** in the menu for a shorter view of the same connected resident:
+
+- **This week:** sleep, movement and heart-rate patterns in everyday language.
+- **What it may mean:** possible effects of those patterns, with no claim that the app measured mood.
+- **When you visit:** three suggestions tailored to the patterns, such as a quiet visit after reduced sleep or checking support needs with the care team.
+
+No charts or numerical measurements appear on this page. The summary uses the existing comparison rules and shows incomplete data explicitly. Connecting from Family returns to Family. Disconnecting clears the summary along with the underlying readings.
+
+Family is a presentation within the current private session, not a separate family login or access-control role. No family invitations or sharing changes are made by this feature.
+
 ## What the app reads
 
 All calls go from the browser directly to `https://health.googleapis.com/v4/` with the short-lived access token:

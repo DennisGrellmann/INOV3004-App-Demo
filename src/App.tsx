@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, CalendarDays, Heart, HeartPulse, LayoutDashboard, Link2, LoaderCircle, Menu, Minus, Moon, RefreshCw, UserRound, X } from 'lucide-react';
+import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, CalendarDays, Heart, HeartPulse, LayoutDashboard, Link2, LoaderCircle, Menu, Minus, Moon, RefreshCw, UserRound, UsersRound, X } from 'lucide-react';
 import { careInsight, changeText, completedDates, dateLabel, formatValue, metricIds, metrics, trendFor, type MetricId, type Resident, type Series } from './domain';
 import { HealthApiError, loadHealth, type HealthResult } from './google-health';
 import { prepareGoogle, requestGoogleToken } from './google-auth';
 import TrendChart from './TrendChart';
 import ConnectionPanel from './ConnectionPanel';
+import FamilyView from './FamilyView';
 import { GOOGLE_CLIENT_ID } from './config';
 
-type View = 'overview' | MetricId | 'connection';
+type View = 'overview' | MetricId | 'family' | 'connection';
 const icons = { sleep: Moon, steps: Activity, heart: HeartPulse };
 const titles: Record<View, string> = {
-  overview: 'Overview', sleep: 'Sleep', steps: 'Activity', heart: 'Heart health', connection: 'Google Health',
+  overview: 'Overview', sleep: 'Sleep', steps: 'Activity', heart: 'Heart health', family: 'Family', connection: 'Google Health',
 };
 
 function savedClientId() {
@@ -43,6 +44,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const token = useRef<{ value: string; scope: string; expiresAt: number } | null>(null);
   const generation = useRef(0);
+  const connectionReturnView = useRef<View>('overview');
   const dates = completedDates();
   const emptySeries = Object.fromEntries(metricIds.map(id => [id, dates.map(date => ({ date, value: null }))])) as Series;
   const series = resident?.series ?? emptySeries;
@@ -71,7 +73,10 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [health]);
 
-  function navigate(next: View) { setView(next); setMobileMenu(false); setError(null); }
+  function navigate(next: View) {
+    if (next === 'connection') connectionReturnView.current = view === 'family' ? 'family' : 'overview';
+    setView(next); setMobileMenu(false); setError(null);
+  }
 
   function disconnect() {
     generation.current += 1;
@@ -93,7 +98,7 @@ export default function App() {
       token.current = session;
       const name = residentName.trim() || 'Connected resident';
       setResident({ id: 'connected', name, initials: name.split(' ').slice(0, 2).map(word => word[0]).join('').toUpperCase(), age: null, room: room.trim() || 'Google Health account', note: 'Readings from the connected Google Health account.', source: 'google', series: result.series });
-      setHealth(result); setView('overview');
+      setHealth(result); setView(connectionReturnView.current);
     } catch (reason) {
       if (request === generation.current) { token.current = null; setError(reason instanceof Error ? reason.message : 'Could not connect to Google.'); }
     } finally { if (request === generation.current) setBusy(false); }
@@ -124,6 +129,7 @@ export default function App() {
       <nav aria-label="Main navigation">
         <button className={`nav-item ${view === 'overview' ? 'active' : ''}`} onClick={() => navigate('overview')} aria-current={view === 'overview' ? 'page' : undefined}><LayoutDashboard size={18}/>Overview</button>
         {metricIds.map(id => { const Icon = icons[id]; return <button key={id} className={`nav-item ${view === id ? 'active' : ''}`} onClick={() => { setMetric(id); navigate(id); }} aria-current={view === id ? 'page' : undefined}><Icon size={18}/>{metrics[id].label}</button>; })}
+        <button className={`nav-item family-nav ${view === 'family' ? 'active' : ''}`} onClick={() => navigate('family')} aria-current={view === 'family' ? 'page' : undefined}><UsersRound size={18}/>Family</button>
         <button className={`nav-item connection-nav ${view === 'connection' ? 'active' : ''}`} onClick={() => navigate('connection')} aria-current={view === 'connection' ? 'page' : undefined}><Link2 size={18}/>Google Health</button>
       </nav>
     </aside>
@@ -138,6 +144,7 @@ export default function App() {
             <div className="resident-info"><h2>{resident?.name ?? 'No resident connected'}</h2>{resident && <p>{resident.room}</p>}</div>
             <div className="resident-actions">{resident ? <><span className="sync-time">Updated {health?.syncedAt.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}</span><button className="button secondary" onClick={refresh} disabled={busy}>{busy ? <LoaderCircle size={15} className="spin"/> : <RefreshCw size={15}/>}Refresh</button></> : <button className="button primary" onClick={() => navigate('connection')}><Link2 size={16}/>Connect Google Health</button>}</div>
           </section>
+          {view === 'family' ? <FamilyView resident={resident}/> : <>
           <p className="summary-caption">7-day averages · compared with the previous week</p>
           <div className="metric-grid">{metricIds.map(id => {
             const trend = trendFor(series[id], id); const Icon = icons[id];
@@ -160,6 +167,7 @@ export default function App() {
             return <tr key={id}><th scope="row">{metrics[id].label}</th><td><span className="table-trend"><TrendIcon direction={trend.direction}/>{trend.direction === 'unknown' ? 'Insufficient data' : trend.direction === 'steady' ? 'Stable' : `${trend.direction === 'down' ? '−' : '+'}${formatValue(Math.abs(trend.delta!), id)} ${metrics[id].unit}`}</span></td><td>{care.attention ? <><p>{care.meaning}</p><p className="care-action">{care.action}</p></> : <span aria-label={trend.direction === 'unknown' ? 'No comparison available' : 'No care prompt'}>—</span>}</td></tr>;
           })}</tbody></table></div></section>}
           <details className="data-notes"><summary>About these readings</summary><p>Compares the latest 7 completed days with the previous 7. Each week needs at least 5 recorded days. Missing readings are excluded.</p><p>Trend flags: 0.5 hours of sleep, 15% activity or 5 bpm. These are app rules, not clinical thresholds. Care considerations are possible effects, not observed symptoms.</p></details>
+          </>}
         </>}
       </main>
     </div>
