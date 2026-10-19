@@ -6,7 +6,7 @@ const previousClientId = '105537197664-pppve2aen17u6cl6hertj7urhmci625e.apps.goo
 const now = new Date(2026, 9, 19, 12);
 const dates = Array.from({ length: 14 }, (_, i) => { const day = new Date(2026, 9, 5 + i); return { year: day.getFullYear(), month: day.getMonth() + 1, day: day.getDate() }; });
 
-async function mockGoogle(page: Page, options: { denyHeart?: boolean; expired?: boolean; empty?: boolean } = {}) {
+async function mockGoogle(page: Page, options: { denyHeart?: boolean; expired?: boolean; empty?: boolean; activeSteps?: boolean } = {}) {
   await page.clock.install({ time: now });
   await page.route('https://accounts.google.com/gsi/client', route => route.fulfill({
     contentType: 'application/javascript',
@@ -18,7 +18,7 @@ async function mockGoogle(page: Page, options: { denyHeart?: boolean; expired?: 
     if (url.includes('/identity')) return route.fulfill({ json: { healthUserId: 'browser-fixture-account' } });
     if (options.empty) return route.fulfill({ json: {} });
     if (url.includes('/sleep/')) return route.fulfill({ json: { dataPoints: dates.map((date, i) => ({ sleep: { interval: { civilEndTime: { date } }, summary: { minutesAsleep: String(i < 7 ? 450 : 420 - (i - 7) * 20) }, metadata: { mainSleep: true } } })) } });
-    if (url.includes('/steps/')) return route.fulfill({ json: { rollupDataPoints: dates.map(date => ({ civilStartTime: { date }, steps: { countSum: '2100' } })) } });
+    if (url.includes('/steps/')) return route.fulfill({ json: { rollupDataPoints: dates.map((date, i) => ({ civilStartTime: { date }, steps: { countSum: options.activeSteps && i >= 7 ? '4200' : '2100' } })) } });
     if (options.denyHeart) return route.fulfill({ status: 403, json: { error: { message: 'denied' } } });
     return route.fulfill({ json: { dataPoints: dates.map(date => ({ dailyRestingHeartRate: { date, beatsPerMinute: '67' } })) } });
   });
@@ -64,6 +64,7 @@ test('Google-shaped API readings drive charts, comparisons and care prompts; dis
   await expect(page.locator('.metric-number').nth(1)).toContainText('2,100');
   await expect(page.locator('.care-table')).toContainText('restlessness or irritability');
   await expect(page.getByRole('heading', { name: 'Care considerations' })).toBeVisible();
+  await page.getByRole('button', { name: 'Sleep', exact: true }).click();
   await page.getByRole('button', { name: '14 days', exact: true }).click();
   await expect(page.getByRole('img', { name: 'Nightly sleep over 14 days' })).toBeVisible();
   await page.getByText('View daily values', { exact: true }).click();
@@ -89,6 +90,7 @@ test('partial API failures remain empty without hiding available sleep data', as
   await page.goto('/'); await connect(page);
   await expect(page.locator('.metric-number').first()).toContainText('6.0');
   await expect(page.locator('.metric-number').nth(2)).toContainText('—');
+  await expect(page.getByRole('article', { name: 'Heart health pattern' })).toContainText('Not enough data');
   await page.getByRole('button', { name: 'Heart health', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Access was not granted');
   await expect(page.getByRole('heading', { name: 'No readings in this period' })).toBeVisible();
@@ -97,8 +99,11 @@ test('partial API failures remain empty without hiding available sleep data', as
 test('empty Google responses do not create zero readings or care alerts', async ({ page }) => {
   await mockGoogle(page, { empty: true });
   await page.goto('/'); await connect(page);
-  await expect(page.getByRole('heading', { name: 'No readings in this period' })).toBeVisible();
+  await expect(page.locator('.overview-characters article')).toHaveCount(3);
+  await expect(page.locator('.overview-characters')).toContainText('Not enough data');
   await expect(page.locator('.care-table')).toContainText('Insufficient data');
+  await page.getByRole('button', { name: 'Sleep', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'No readings in this period' })).toBeVisible();
   await expect(page.getByText('0 of 7 days recorded')).toBeVisible();
 });
 
@@ -111,6 +116,25 @@ test('mobile navigation and connection setup fit the viewport', async ({ page })
   await expect(page.getByRole('heading', { name: 'Connect Google Health' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: '/workspace/scratch/careview-mobile.png', fullPage: true, animations: 'disabled' });
+});
+
+test('overview replaces its graph with three characters driven by Google readings', async ({ page }) => {
+  await mockGoogle(page, { activeSteps: true });
+  await page.goto('/'); await connect(page);
+  await expect(page.locator('.overview-characters article')).toHaveCount(3);
+  await expect(page.getByRole('article', { name: 'Sleep pattern' })).toContainText('😪');
+  await expect(page.getByRole('article', { name: 'Sleep pattern' })).toContainText('Much less sleep');
+  await expect(page.getByRole('article', { name: 'Activity pattern' })).toContainText('🏃💨');
+  await expect(page.getByRole('article', { name: 'Heart health pattern' })).toContainText('Similar heart rate');
+  await expect(page.locator('.trend-card')).toHaveCount(0);
+  await page.screenshot({ path: '/workspace/scratch/careview-overview-characters-desktop.png', fullPage: true, animations: 'disabled' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: '/workspace/scratch/careview-overview-characters-mobile.png', fullPage: true, animations: 'disabled' });
+  await page.getByRole('button', { name: /Daily activity/ }).click();
+  await expect(page.getByRole('heading', { name: 'Activity', exact: true })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Daily activity over 7 days' })).toBeVisible();
+  await expect(page.locator('.overview-characters')).toHaveCount(0);
 });
 
 test('OAuth API failure leaves the dashboard unconnected with a useful error', async ({ page }) => {
@@ -134,7 +158,7 @@ test('family page summarises Google patterns and visit suggestions without raw m
   await expect(page.locator('.family-visits li')).toHaveCount(3);
   await expect(page.locator('.metric-grid')).toHaveCount(0);
   await expect(page.getByRole('img', { name: /over 7 days/ })).toHaveCount(0);
-  await expect(page.getByRole('table')).toHaveCount(0);
+  await expect(page.locator('.daily-values')).toHaveCount(0);
   await page.screenshot({ path: '/workspace/scratch/careview-family-desktop.png', fullPage: true, animations: 'disabled' });
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -148,6 +172,28 @@ test('family page shows missing readings without inventing a feeling', async ({ 
   await expect(page.locator('.family-view')).toContainText('Not enough readings');
   await expect(page.locator('.family-view')).not.toContainText('may feel more tired');
   await expect(page.locator('.family-visits li')).toHaveCount(3);
+});
+
+test('family medication example distinguishes taken, missed and declined doses across seven days', async ({ page }) => {
+  await mockGoogle(page);
+  await page.goto('/'); await connect(page);
+  await page.getByRole('button', { name: 'Family', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Medication accountability' })).toBeVisible();
+  const example = page.getByRole('region', { name: 'Medication accountability' });
+  await expect(example).toContainText('Example data');
+  await expect(example).toContainText('not a resident medication record');
+  const table = example.getByRole('table');
+  await expect(table.getByRole('columnheader')).toHaveCount(8);
+  await expect(table.getByRole('rowheader', { name: 'Vitamin D' })).toBeVisible();
+  await expect(table.getByRole('columnheader', { name: /12 Oct/ })).toBeVisible();
+  await expect(table.getByRole('columnheader', { name: /18 Oct/ })).toBeVisible();
+  await expect(table.getByRole('cell', { name: 'Taken', exact: true })).toHaveCount(5);
+  await expect(table.getByRole('cell', { name: 'Missed', exact: true })).toHaveCount(1);
+  await expect(table.getByRole('cell', { name: 'Declined', exact: true })).toHaveCount(1);
+  await expect(example).toContainText('Some doses were missed or declined');
+  await expect(example).toContainText('care team');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 test('family connection returns to the summary and disconnect clears it', async ({ page }) => {

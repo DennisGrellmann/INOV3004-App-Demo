@@ -1,5 +1,6 @@
 import type { Resident } from './domain';
 import { buildFamilySummary } from './family-summary';
+import MedicationExample from './MedicationExample';
 
 export default function FamilyView({ resident }: { resident: Resident | null }) {
   if (!resident) return <div className="card family-empty"><p>Connect Google Health to see a family summary.</p></div>;
@@ -24,5 +25,6 @@ export default function FamilyView({ resident }: { resident: Resident | null }) 
       </section>
     </div>
     <p className="family-source">Based on Google Health readings, not a mood report.</p>
+    <MedicationExample/>
   </div>;
 }

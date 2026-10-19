@@ -6,6 +6,7 @@ import { prepareGoogle, requestGoogleToken } from './google-auth';
 import TrendChart from './TrendChart';
 import ConnectionPanel from './ConnectionPanel';
 import FamilyView from './FamilyView';
+import OverviewCharacters from './OverviewCharacters';
 import { GOOGLE_CLIENT_ID } from './config';
 
 type View = 'overview' | MetricId | 'family' | 'connection';
@@ -148,25 +149,25 @@ export default function App() {
           <p className="summary-caption">7-day averages · compared with the previous week</p>
           <div className="metric-grid">{metricIds.map(id => {
             const trend = trendFor(series[id], id); const Icon = icons[id];
-            return <button key={id} className={`metric-card ${activeMetric === id ? 'selected' : ''}`} aria-pressed={activeMetric === id} onClick={() => { setMetric(id); if (view !== 'overview') setView(id); }}>
+            return <button key={id} className={`metric-card ${view === id ? 'selected' : ''}`} aria-pressed={view === id} onClick={() => { setMetric(id); setView(id); }}>
               <div className="metric-top"><Icon size={18}/><span>{metrics[id].full}</span></div>
               <div className="metric-number">{formatValue(trend.current, id)}<span>{id === 'steps' ? 'steps / day' : id === 'sleep' ? 'hrs / night' : 'bpm'}</span></div>
               {resident && <div className="metric-bottom"><span className={`metric-change ${careInsight(id, trend).attention ? 'attention' : ''}`}><TrendIcon direction={trend.direction}/>{changeText(trend, id)}</span><span className="coverage">{trend.coverage}/7 days</span></div>}
             </button>;
           })}</div>
-          <section className="card trend-card">
+          {view === 'overview' ? <OverviewCharacters series={series}/> : <section className="card trend-card">
             <div className="card-heading"><h2>{metrics[activeMetric].label} trend</h2><div className="segmented" aria-label="Chart period">{[7, 14].map(days => <button key={days} aria-pressed={chartDays === days} className={chartDays === days ? 'active' : ''} onClick={() => setChartDays(days)}>{days} days</button>)}</div></div>
             {!resident ? <div className="chart-empty"><p>Connect Google Health to view readings.</p></div> : <>
               {health?.issues[activeMetric] && <div className="metric-issue" role="status">{health.issues[activeMetric]}</div>}
               {series[activeMetric].slice(-chartDays).every(day => day.value === null) ? <div className="chart-empty"><h3>No readings in this period</h3><p>Sync your device, then refresh.</p></div> : <TrendChart data={series[activeMetric].slice(-chartDays)} metric={activeMetric}/>}
               <div className="chart-footnote"><span>Google Health · {metrics[activeMetric].unit}</span><span>{activeTrend.coverage} of 7 days recorded</span></div>
             </>}
-          </section>
+          </section>}
           {resident && <section className="card care-notes"><h2>Care considerations</h2><div className="table-scroll"><table className="care-table"><thead><tr><th>Metric</th><th>Weekly change</th><th>Consideration</th></tr></thead><tbody>{metricIds.map(id => {
             const trend = trendFor(series[id], id); const care = careInsight(id, trend);
             return <tr key={id}><th scope="row">{metrics[id].label}</th><td><span className="table-trend"><TrendIcon direction={trend.direction}/>{trend.direction === 'unknown' ? 'Insufficient data' : trend.direction === 'steady' ? 'Stable' : `${trend.direction === 'down' ? '−' : '+'}${formatValue(Math.abs(trend.delta!), id)} ${metrics[id].unit}`}</span></td><td>{care.attention ? <><p>{care.meaning}</p><p className="care-action">{care.action}</p></> : <span aria-label={trend.direction === 'unknown' ? 'No comparison available' : 'No care prompt'}>—</span>}</td></tr>;
           })}</tbody></table></div></section>}
-          <details className="data-notes"><summary>About these readings</summary><p>Compares the latest 7 completed days with the previous 7. Each week needs at least 5 recorded days. Missing readings are excluded.</p><p>Trend flags: 0.5 hours of sleep, 15% activity or 5 bpm. These are app rules, not clinical thresholds. Care considerations are possible effects, not observed symptoms.</p></details>
+          <details className="data-notes"><summary>About these readings</summary><p>Compares the latest 7 completed days with the previous 7. Each week needs at least 5 recorded days. Missing readings are excluded.</p><p>Trend flags: 0.5 hours of sleep, 15% activity or 5 bpm. Overview characters use five levels; “much” means at least twice these changes. They illustrate recorded trends, not observed feelings or clinical status. These are app rules, not clinical thresholds. Care considerations are possible effects, not observed symptoms.</p></details>
           </>}
         </>}
       </main>

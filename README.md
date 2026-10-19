@@ -2,7 +2,7 @@
 
 A simple resident wellbeing app for aged care. The dashboard shows actual Google Health sleep, daily steps and resting heart rate, alongside weekly changes and possible care implications.
 
-**There is no sample resident data in the app.** Before connection, metrics are empty. A possible care implication is an observation prompt, never an assertion that the resident has a symptom or a diagnosis.
+**Health metrics come only from the connected Google account.** Before connection, metrics are empty. A possible care implication is an observation prompt, never an assertion that the resident has a symptom or a diagnosis. The Family page also includes a clearly labelled medication example; it is not a resident medication record.
 
 ## Run locally
 
@@ -39,7 +39,9 @@ Choose **Family** in the menu for a shorter view of the same connected resident:
 - **What it may mean:** possible effects of those patterns, with no claim that the app measured mood.
 - **When you visit:** three suggestions tailored to the patterns, such as a quiet visit after reduced sleep or checking support needs with the care team.
 
-No charts or numerical measurements appear on this page. The summary uses the existing comparison rules and shows incomplete data explicitly. Connecting from Family returns to Family. Disconnecting clears the summary along with the underlying readings.
+The health summary omits charts and numerical measurements. It uses the existing comparison rules and shows incomplete data explicitly. Connecting from Family returns to Family. Disconnecting clears the summary along with the underlying readings.
+
+**Medication accountability** illustrates seven completed days of Vitamin D doses: five taken, one missed and one declined. It includes a prompt to ask about concerns and speak with the care team. The example is explicitly labelled and is not connected to medication records; the current Google integration does not supply adherence data. Its ticks are a demonstration, not editable or verified dose records.
 
 Family is a presentation within the current private session, not a separate family login or access-control role. No family invitations or sharing changes are made by this feature.
 
@@ -61,6 +63,8 @@ The integration follows pagination, uses Google’s reconciled all-source data, 
 The latest seven completed civil dates are compared to the preceding seven. Today is excluded so partial days do not distort the comparison. API civil dates retain the date recorded for the account; the requested date window follows the browser’s calendar, so use the facility’s timezone when reviewing residents.
 
 At least five recorded days are needed in **each** week to assign a trend. Missing days stay missing and appear as chart gaps. The weekly average uses recorded values only and displays coverage. A change of at least 0.5 hours of sleep, 15% of prior average steps, or 5 bpm resting heart rate produces a directional label. These are transparent prototype rules, **not clinical thresholds**. A steady trend is not a clinical all-clear.
+
+Overview replaces the detailed chart with three characters, each with five levels relative to the previous week. The outer levels mean at least twice the change threshold (1 hour, 30% activity or 10 bpm); activity retains a minimum change threshold of one step for a zero baseline. Missing comparisons show a question mark. The characters illustrate recorded patterns, not measured feelings or clinical status. Open Sleep, Activity or Heart health for charts and daily readings; metric cards also open the matching page.
 
 For example, a declining sleep average produces a prompt to check for tiredness, restlessness or irritability. It does not assert that these were observed. The care team should interpret readings alongside observations and the resident’s individual care plan. [NHLBI sleep context](https://www.nhlbi.nih.gov/health/sleep-deprivation/health-effects).
 

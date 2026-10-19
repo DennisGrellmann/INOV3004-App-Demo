@@ -48,3 +48,9 @@ Approved in chat. Add a Family menu item for the connected resident, with three 
 Sleep context: https://www.nhlbi.nih.gov/health/sleep-deprivation/health-effects
 
 Communication context: https://www.nia.nih.gov/health/obtaining-older-patients-medical-history
+
+## Overview characters and medication example — 20 October 2026
+
+Approved in chat. Replace only the Overview chart with three large emoji characters for sleep, activity and resting heart rate. Use five comparison levels: much lower, lower, similar, higher and much higher. The outer levels use twice the existing trend threshold. Sleep uses 😪, 🥱, 😴, 🛌 and 💤; activity uses 🪑, 🧍, 🚶, 🏃 and 🏃💨; heart rate uses a heart with directional arrows. Missing or sparse comparisons stay neutral with ❔. Characters have text labels and do not assert measured mood or clinical status. The detailed metric pages retain charts and controls, and metric cards navigate to those pages.
+
+Add Medication accountability below the Family health summary. This is an explicitly labelled example, not Google data or a resident medication record. Show one Vitamin D row over the last seven completed days, five taken ticks, one missed dose and one declined dose, with accessible labels and a concise prompt to talk with the resident and care team. Keep the example visually separate from the Google-derived health summary. No medication logging, data storage or new access roles are added.
