@@ -25,7 +25,7 @@ Open `http://localhost:5173`. The stack is React, TypeScript, Vite and plain CSS
    - `https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly`
    - `https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly`
 5. The resident/test account must be linked in the **Google Health mobile app** and have device readings synced there.
-6. In Careview, open **Google Health**, enter the public OAuth client ID, optionally enter a resident display name and room, and choose **Continue with Google**. Only connect an account with the account holder’s appropriate consent.
+6. In Careview, open **Google Health**, optionally enter a resident display name and room, and choose **Continue with Google**. The project's public OAuth client ID is already configured. You can replace it in this screen when using another project. Only connect an account with the account holder’s appropriate consent.
 
 You can alternatively set `VITE_GOOGLE_CLIENT_ID` in a local `.env` file before building. This is a **public client ID**, not a secret. Never put a client secret in any `VITE_*` variable. No client secret is required for this app’s [Google Identity Services token model](https://developers.google.com/identity/oauth2/web/guides/use-token-model).
 

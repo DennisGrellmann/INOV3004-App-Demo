@@ -5,6 +5,7 @@ import { HealthApiError, loadHealth, type HealthResult } from './google-health';
 import { prepareGoogle, requestGoogleToken } from './google-auth';
 import TrendChart from './TrendChart';
 import ConnectionPanel from './ConnectionPanel';
+import { GOOGLE_CLIENT_ID } from './config';
 
 type View = 'overview' | MetricId | 'connection';
 const icons = { sleep: Moon, steps: Activity, heart: HeartPulse };
@@ -17,8 +18,8 @@ const titles: Record<View, [string, string]> = {
 };
 
 function savedClientId() {
-  try { return localStorage.getItem('careview.googleClientId') || import.meta.env.VITE_GOOGLE_CLIENT_ID || ''; }
-  catch { return import.meta.env.VITE_GOOGLE_CLIENT_ID || ''; }
+  try { return localStorage.getItem('careview.googleClientId') || GOOGLE_CLIENT_ID; }
+  catch { return GOOGLE_CLIENT_ID; }
 }
 
 function TrendIcon({ direction }: { direction: string }) {
